@@ -67,7 +67,7 @@ const StyledButtonbar = styled(ButtonBar)`
   display: none;
 
   @media (min-width: ${p => p.theme.breakpoints[2]}) {
-    display: flex;
+    display: grid;
   }
 `;
 

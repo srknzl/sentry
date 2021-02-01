@@ -1,5 +1,6 @@
 import React from 'react';
 import isEqual from 'lodash/isEqual';
+import orderBy from 'lodash/orderBy';
 import partition from 'lodash/partition';
 
 import {addErrorMessage, addSuccessMessage} from 'app/actionCreators/indicator';
@@ -49,6 +50,7 @@ const dynamicSampling = {
     //   type: 'error',
     // },
     {
+      id: '0',
       condition: {
         op: 'and',
         inner: [
@@ -60,6 +62,7 @@ const dynamicSampling = {
       type: 'error',
     },
     {
+      id: '1',
       condition: {
         op: 'and',
         inner: [{op: 'glob', name: 'trace.release', value: ['trace1', 'trace2']}],
@@ -68,6 +71,7 @@ const dynamicSampling = {
       type: 'trace',
     },
     {
+      id: '2',
       condition: {
         op: 'and',
         inner: [
@@ -111,7 +115,11 @@ class FiltersAndSampling extends AsyncView<Props, State> {
 
     if (
       !isEqual(
-        [...this.state.errorRules, ...this.state.transactionRules],
+        orderBy(
+          [...this.state.errorRules, ...this.state.transactionRules],
+          rule => rule.id,
+          ['asc']
+        ),
         dynamicSampling.rules
       )
     ) {
@@ -279,6 +287,14 @@ class FiltersAndSampling extends AsyncView<Props, State> {
     }));
   };
 
+  handleUpdateRules = (rules: Array<DynamicSamplingRule>) => {
+    if (rules[0].type === DynamicSamplingRuleType.ERROR) {
+      this.setState({errorRules: rules});
+      return;
+    }
+    this.setState({transactionRules: rules});
+  };
+
   renderBody() {
     const {errorRules, transactionRules} = this.state;
     const {hasAccess} = this.props;
@@ -310,10 +326,11 @@ class FiltersAndSampling extends AsyncView<Props, State> {
         </TextBlock>
         <RulesPanel
           rules={errorRules}
+          disabled={disabled}
           onAddRule={this.handleAddRule('errorRules')}
           onEditRule={this.handleEditRule}
           onDeleteRule={this.handleDeleteRule}
-          disabled={disabled}
+          onUpdateRules={this.handleUpdateRules}
         />
         <TextBlock>
           {t(
@@ -322,10 +339,11 @@ class FiltersAndSampling extends AsyncView<Props, State> {
         </TextBlock>
         <RulesPanel
           rules={transactionRules}
+          disabled={disabled}
           onAddRule={this.handleAddRule('transactionRules')}
           onEditRule={this.handleEditRule}
           onDeleteRule={this.handleDeleteRule}
-          disabled={disabled}
+          onUpdateRules={this.handleUpdateRules}
         />
       </React.Fragment>
     );

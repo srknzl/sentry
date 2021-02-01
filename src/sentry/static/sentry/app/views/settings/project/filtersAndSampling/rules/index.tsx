@@ -3,34 +3,74 @@ import styled from '@emotion/styled';
 
 import {PanelTable} from 'app/components/panels';
 import {t} from 'app/locale';
-import overflowEllipsis from 'app/styles/overflowEllipsis';
 import {DynamicSamplingRule} from 'app/types/dynamicSampling';
 
+import DragHandle from './dragHandle';
 import Rule from './rule';
+import {layout} from './utils';
 
 type Props = {
   rules: Array<DynamicSamplingRule>;
+  disabled: boolean;
   onEditRule: (rule: DynamicSamplingRule) => () => void;
   onDeleteRule: (rule: DynamicSamplingRule) => () => void;
-  disabled: boolean;
+  onUpdateRules: (rules: Array<DynamicSamplingRule>) => void;
 };
 
-function Rules({rules, onEditRule, onDeleteRule, disabled}: Props) {
+function Rules({rules, onEditRule, onDeleteRule, disabled, onUpdateRules}: Props) {
+  function handleUpdateRules(items: Array<string>) {
+    const orderedRules = items.map(item => rules.find(rule => rule.id === item)) as Array<
+      DynamicSamplingRule
+    >;
+    onUpdateRules(orderedRules);
+  }
+
   return (
     <StyledPanelTable
       headers={['', t('Event Type'), t('Category'), t('Sampling Rate'), '']}
       isEmpty={!rules.length}
       emptyMessage={t('There are no rules to display')}
+      className="draggable-items"
     >
-      {rules.map((rule, index) => (
-        <Rule
-          key={index}
-          rule={rule}
-          onEditRule={onEditRule(rule)}
-          onDeleteRule={onDeleteRule(rule)}
-          disabled={disabled}
-        />
-      ))}
+      <DragHandle
+        items={rules.map(rule => String(rule.id))}
+        onUpdateItems={handleUpdateRules}
+        renderItem={({
+          value,
+          listeners,
+          forwardRef,
+          transform,
+          transition,
+          style: grabStyle,
+        }) => {
+          const rule = rules.find(({id}) => id === value);
+
+          if (!rule) {
+            return null;
+          }
+
+          const style = {
+            transition,
+            '--translate-x': transform ? `${Math.round(transform.x)}px` : undefined,
+            '--translate-y': transform ? `${Math.round(transform.y)}px` : undefined,
+            '--scale-x': transform?.scaleX ? `${transform.scaleX}` : undefined,
+            '--scale-y': transform?.scaleY ? `${transform.scaleY}` : undefined,
+          } as React.CSSProperties;
+
+          return (
+            <Rule
+              rule={rule}
+              onEditRule={onEditRule(rule)}
+              onDeleteRule={onDeleteRule(rule)}
+              disabled={disabled}
+              grabStyle={grabStyle}
+              forwardRef={forwardRef as React.Ref<HTMLDivElement> | undefined}
+              style={style}
+              listeners={listeners}
+            />
+          );
+        }}
+      />
     </StyledPanelTable>
   );
 }
@@ -43,36 +83,24 @@ const StyledPanelTable = styled(PanelTable)`
   border: none;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
-
+  ${p => layout(p.theme)}
   > * {
-    overflow: hidden;
-
-    :nth-child(-n + 5) {
-      ${overflowEllipsis};
-      :nth-child(5n - 1) {
-        text-align: center;
-      }
+    :nth-child(-n + 6):not(:last-child) {
+      border-bottom: 1px solid ${p => p.theme.border};
+      height: 100%;
     }
-
-    @media (max-width: ${p => p.theme.breakpoints[0]}) {
-      :nth-child(5n - 4),
-      :nth-child(5n - 3) {
-        display: none;
-      }
+    :nth-child(n + 6) {
+      ${p =>
+        !p.isEmpty
+          ? `
+              display: grid;
+              grid-column: 1/-1;
+              padding: 0;
+            `
+          : `
+              display: block;
+              grid-column: 1/-1;
+            `}
     }
-
-    :nth-child(5n) {
-      overflow: visible;
-    }
-  }
-
-  grid-template-columns: 1.5fr 1fr max-content;
-
-  @media (min-width: ${p => p.theme.breakpoints[0]}) {
-    grid-template-columns: max-content 1fr 1.5fr 1fr max-content;
-  }
-
-  @media (min-width: ${p => p.theme.breakpoints[2]}) {
-    grid-template-columns: max-content 1fr 2fr 1fr max-content;
   }
 `;

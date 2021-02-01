@@ -119,7 +119,7 @@ class TransactionRuleModal extends Form<Props, State> {
       return;
     }
 
-    const newRule: DynamicSamplingRule = {
+    const newRule: Omit<DynamicSamplingRule, 'id'> = {
       type: tracing ? DynamicSamplingRuleType.TRACE : DynamicSamplingRuleType.TRANSACTION,
       condition: {
         op: DynamicSamplingConditionOperator.AND,

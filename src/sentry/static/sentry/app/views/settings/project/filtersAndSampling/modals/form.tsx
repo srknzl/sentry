@@ -32,7 +32,7 @@ type Conditions = React.ComponentProps<typeof ConditionFields>['conditions'];
 
 type Props = ModalRenderProps & {
   organization: Organization;
-  onSubmit: (rule: DynamicSamplingRule) => void;
+  onSubmit: (rule: Omit<DynamicSamplingRule, 'id'>) => void;
   rule?: DynamicSamplingRule;
 };
 

@@ -63,7 +63,7 @@ class ErrorRuleModal extends Form<Props, State> {
       return;
     }
 
-    const newRule: DynamicSamplingRule = {
+    const newRule: Omit<DynamicSamplingRule, 'id'> = {
       type: DynamicSamplingRuleType.ERROR,
       condition: {
         op: DynamicSamplingConditionOperator.AND,
